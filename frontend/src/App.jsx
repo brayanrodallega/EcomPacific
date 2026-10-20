@@ -1,25 +1,6 @@
 import { useState } from 'react';
 import { login } from './services/authService.js';
-
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function validate(values) {
-  const errors = {};
-
-  if (!values.email.trim()) {
-    errors.email = 'Ingresa tu correo electrónico.';
-  } else if (!EMAIL_PATTERN.test(values.email.trim())) {
-    errors.email = 'Ingresa un correo electrónico válido.';
-  }
-
-  if (!values.password) {
-    errors.password = 'Ingresa tu contraseña.';
-  } else if (values.password.length < 6) {
-    errors.password = 'La contraseña debe tener al menos 6 caracteres.';
-  }
-
-  return errors;
-}
+import { validateLogin } from './utils/loginValidation.js';
 
 function EyeIcon({ hidden }) {
   return hidden ? (
@@ -52,7 +33,7 @@ export default function App() {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    const nextErrors = validate(values);
+    const nextErrors = validateLogin(values);
     setErrors(nextErrors);
     setFormError('');
 

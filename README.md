@@ -14,7 +14,7 @@ Arquitectura: por capas
 
 Backend:
 - Typescript
-- Express
+- NestJS (sobre Express)
 - Nodejs
 - JWT
 

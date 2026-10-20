@@ -21,3 +21,9 @@ El formulario envía las credenciales a `POST /auth/login`. Para iniciar sesión
 ```bash
 npm run build
 ```
+
+## Pruebas
+
+```bash
+npm test
+```
