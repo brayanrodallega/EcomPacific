@@ -5,6 +5,7 @@ import { Config } from '@config/configuracion';
 import { DatabaseModule } from '@modules/compartido/database.module';
 import { AutenticacionModule } from '@modules/autenticacion/autenticacion.module';
 import { UsuariosModule } from '@modules/usuarios/usuarios.module';
+import { ProductosModule } from '@modules/productos/productos.module';
 
 @Module({
   imports: [
@@ -17,6 +18,7 @@ import { UsuariosModule } from '@modules/usuarios/usuarios.module';
     DatabaseModule,
     UsuariosModule,
     AutenticacionModule,
+    ProductosModule,
   ],
 })
 export class AppModule {}

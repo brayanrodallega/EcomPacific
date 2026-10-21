@@ -1,29 +1,37 @@
 # EcomPacific frontend
 
-Interfaz del proyecto hecha con React y Vite.
+Aplicación React con Vite que incluye el formulario de inicio de sesión y el catálogo público de productos.
 
-## Ejecutar en desarrollo
+## Requisitos
+
+- Node.js 18 o superior.
+- Backend disponible en `http://localhost:3000/api`, o la URL configurada en `VITE_API_URL`.
+
+## Instalación y ejecución
 
 ```bash
 npm install
 ```
 
-Crea un archivo `.env` a partir de `.env.example` si el backend no está en `http://localhost:3000/api` y configura `VITE_API_URL` con la URL base de la API.
+Copia `.env.example` a `.env` y ajusta `VITE_API_URL` si la API usa otra dirección. Luego inicia Vite:
 
 ```bash
 npm run dev
 ```
 
-El formulario envía las credenciales a `POST /auth/login`. Para iniciar sesión correctamente, el backend debe estar en ejecución y tener usuarios registrados. Las credenciales inválidas muestran un mensaje genérico y la sesión se conserva solo en memoria del navegador.
+El formulario de inicio de sesión se muestra al abrir la aplicación. Usa el enlace “Explorar el catálogo” o abre `/#productos` para ver los productos.
 
-## Compilar
+## Funcionalidad
 
-```bash
-npm run build
-```
+- Inicio de sesión conectado a `POST /auth/login`; los tokens se conservan solo en memoria.
+- Catálogo conectado a `GET /products`, con búsqueda por nombre, descripción y categoría.
+- Vista de detalle conectada a `GET /products/:id`.
+- Estados de carga, error de conexión/servidor, catálogo vacío y búsqueda sin resultados.
+- Alternativa visual para productos sin imagen o con una URL de imagen que falle.
 
-## Pruebas
+## Comprobaciones
 
 ```bash
 npm test
+npm run build
 ```

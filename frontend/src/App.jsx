@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { login } from './services/authService.js';
 import { validateLogin } from './utils/loginValidation.js';
+import ProductCatalog from './ProductCatalog.jsx';
 
 function EyeIcon({ hidden }) {
   return hidden ? (
@@ -16,7 +17,7 @@ function EyeIcon({ hidden }) {
   );
 }
 
-export default function App() {
+function LoginPage() {
   const [values, setValues] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [showPassword, setShowPassword] = useState(false);
@@ -89,6 +90,7 @@ export default function App() {
               <p className="eyebrow">Sesión iniciada</p>
               <h2 id="page-title">¡Qué bueno verte, {session.user.nombre}!</h2>
               <p className="form-intro">Has iniciado sesión con {session.user.email}.</p>
+              <a className="catalog-login-link" href="#productos">Explorar productos</a>
               <button className="secondary-button" onClick={handleSignOut} type="button">
                 Cerrar sesión
               </button>
@@ -158,7 +160,7 @@ export default function App() {
                 </button>
               </form>
 
-              <p className="form-footnote">Acceso seguro a tu cuenta EcomPacific.</p>
+              <p className="form-footnote">Acceso seguro a tu cuenta EcomPacific.<br /><a href="#productos">Explorar el catálogo</a></p>
             </div>
           )}
           <footer className="form-footer">© {new Date().getFullYear()} EcomPacific</footer>
@@ -166,4 +168,16 @@ export default function App() {
       </section>
     </main>
   );
+}
+
+export default function App() {
+  const [hash, setHash] = useState(() => window.location.hash);
+
+  useEffect(() => {
+    const updateRoute = () => setHash(window.location.hash);
+    window.addEventListener('hashchange', updateRoute);
+    return () => window.removeEventListener('hashchange', updateRoute);
+  }, []);
+
+  return hash.startsWith('#productos') ? <ProductCatalog /> : <LoginPage />;
 }
