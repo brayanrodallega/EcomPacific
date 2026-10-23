@@ -2,6 +2,34 @@
 
 module.exports = {
   async up(queryInterface, Sequelize) {
+    // 1. Primero crear categorias (referenciada)
+    await queryInterface.createTable('categorias', {
+      id: {
+        allowNull: false,
+        autoIncrement: true,
+        primaryKey: true,
+        type: Sequelize.INTEGER,
+      },
+      nombre: {
+        type: Sequelize.STRING(100),
+        allowNull: false,
+        unique: true,
+      },
+      descripcion: {
+        type: Sequelize.TEXT,
+        allowNull: true,
+      },
+      creado_en: {
+        allowNull: false,
+        type: Sequelize.DATE,
+      },
+      actualizado_en: {
+        allowNull: false,
+        type: Sequelize.DATE,
+      },
+    });
+
+    // 2. Luego productos (referencia a categorias)
     await queryInterface.createTable('productos', {
       id: {
         allowNull: false,
@@ -51,44 +79,10 @@ module.exports = {
         type: Sequelize.DATE,
       },
     });
-
-    await queryInterface.createTable('categorias', {
-      id: {
-        allowNull: false,
-        autoIncrement: true,
-        primaryKey: true,
-        type: Sequelize.INTEGER,
-      },
-      nombre: {
-        type: Sequelize.STRING(100),
-        allowNull: false,
-        unique: true,
-      },
-      descripcion: {
-        type: Sequelize.TEXT,
-        allowNull: true,
-      },
-      creado_en: {
-        allowNull: false,
-        type: Sequelize.DATE,
-      },
-      actualizado_en: {
-        allowNull: false,
-        type: Sequelize.DATE,
-      },
-    });
-
-    await queryInterface.addConstraint('productos', {
-      fields: ['categoria_id'],
-      type: 'foreign key',
-      name: 'fk_productos_categoria',
-      references: { table: 'categorias', field: 'id' },
-      onUpdate: 'CASCADE',
-      onDelete: 'RESTRICT',
-    });
   },
 
   async down(queryInterface, Sequelize) {
+    // Borrar en orden inverso (primero productos, luego categorias)
     await queryInterface.dropTable('productos');
     await queryInterface.dropTable('categorias');
   },
