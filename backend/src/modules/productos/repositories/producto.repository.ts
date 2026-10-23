@@ -21,4 +21,16 @@ export class ProductoRepository {
   async findById(id: number): Promise<Product | null> {
     return this.productModel.findByPk(id);
   }
+
+  async create(data: {
+    nombre: string;
+    descripcion: string;
+    precio: number;
+    stock: number;
+    imagenUrl: string;
+    categoriaId: number;
+    activo: boolean;
+  }): Promise<Product> {
+    return this.productModel.create(data);
+  }
 }

@@ -65,7 +65,8 @@ src/modules/{modulo}/
 src/core/
 ├── interceptors/    # TransformResponseInterceptor
 ├── pipes/           # ValidationPipe, ParseIntPipe
-└── decorators/      # @Public(), @Roles(), @CurrentUser()
+├── decorators/      # @Public(), @Roles(), @CurrentUser()
+└── filters/         # GlobalExceptionFilter
 ```
 
 ### Flujo de Request
@@ -73,6 +74,8 @@ src/core/
 ```
 Request
   → Middleware (Logger)
+  → Guard (JwtAuthGuard)        // Valida JWT, adjunta req.user
+  → Guard (RolesGuard)          // Valida @Roles()
   → Pipe (ValidationPipe)       // Valida DTO (class-validator)
   → Controller                  # Recibe request, llama Service
   → Service                     # Lógica negocio, llama Repository
@@ -102,10 +105,12 @@ backend/
 │   ├── core/                      # Utilidades globales
 │   │   ├── interceptors/
 │   │   ├── pipes/
-│   │   └── decorators/
+│   │   ├── filters/               # GlobalExceptionFilter
+│   │   ├── decorators/            # @Public(), @Roles(), @CurrentUser()
+│   │   └── guards/                # JwtAuthGuard, RolesGuard, ThrottlerGuard
 │   ├── modules/                   # Módulos de funcionalidad
-│   │   ├── productos/             # Catálogo productos (IMPLEMENTADO)
-│   │   ├── autenticacion/         # Login, register, refresh, JWT (PENDIENTE)
+│   │   ├── productos/             # Catálogo productos ✅ IMPLEMENTADO
+│   │   ├── autenticacion/         # Login, register, refresh, JWT ✅ IMPLEMENTADO
 │   │   ├── usuarios/              # CRUD usuarios + roles (PENDIENTE)
 │   │   ├── categorias/            # Gestión categorías (PENDIENTE)
 │   │   ├── ordenes/               # Órdenes de compra (PENDIENTE)
@@ -210,8 +215,13 @@ npx sequelize-cli db:migrate:status
 ### Migración Inicial (ya incluida)
 
 Crea las tablas:
-- `productos`
+- `usuarios` (con campos para rate limiting: `intentos_login`, `bloqueado_hasta`, `refresh_token`)
 - `categorias`
+- `productos`
+- `carritos`
+- `carrito_items`
+- `ordenes`
+- `orden_items`
 
 ### Sincronización Automática (Desarrollo)
 
@@ -252,6 +262,7 @@ npm run start:debug
 ## 📚 Documentación API
 
 ### Swagger UI
+
 Disponible en: **http://localhost:3000/docs**
 
 Incluye:
@@ -262,7 +273,7 @@ Incluye:
 ### Exportar para Postman
 1. Abre http://localhost:3000/docs
 2. Click **Download** → `openapi.json`
-3. En Postman: **Import** → File → `openapi.json`
+2. En Postman: **Import** → File → `openapi.json`
 
 ---
 
@@ -270,12 +281,11 @@ Incluye:
 
 ## 🔗 Endpoints Principales
 
-### Productos (Público) ✅ IMPLEMENTADO
+### Productos (Público) ✅ IMPLEMENTADO (HU-01)
 
 | Método | Endpoint | Descripción |
 |--------|----------|-------------|
 | GET | `/api/productos` | Listar productos activos |
-| GET | `/api/productos?categoriaId=1` | Filtrar por categoría |
 | GET | `/api/productos/:id` | Obtener producto por ID |
 
 ### Respuesta Producto (Campos públicos)
@@ -286,16 +296,82 @@ Incluye:
   "nombre": "Laptop Gaming",
   "imagenUrl": "https://ejemplo.com/imagen.jpg",
   "precio": 2500000,
-  "disponible": true,
-  "categoriaId": 1
+  "disponible": true
 }
 ```
+
+### Gestión de Productos (Admin) ✅ IMPLEMENTADO (HU-04)
+
+| Método | Endpoint | Descripción | Auth |
+|--------|----------|-------------|------|
+| POST | `/api/productos` | Registrar nuevo producto | Bearer Token (`rol: ADMIN`) |
+
+#### Body Request `POST /api/productos`:
+```json
+{
+  "nombre": "Laptop Gaming",
+  "descripcion": "Laptop para gaming de alto rendimiento",
+  "precio": 2500000,
+  "stock": 10,
+  "imagenUrl": "https://ejemplo.com/imagen.jpg",
+  "categoriaId": 1,
+  "activo": true
+}
+```
+
+#### Respuesta Exitosa (201 Created):
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "nombre": "Laptop Gaming",
+    "descripcion": "Laptop para gaming de alto rendimiento",
+    "precio": 2500000,
+    "stock": 10,
+    "imagenUrl": "https://ejemplo.com/imagen.jpg",
+    "categoriaId": 1,
+    "activo": true,
+    "disponible": true,
+    "creadoEn": "2026-10-22T...",
+    "actualizadoEn": "2026-10-22T..."
+  },
+  "timestamp": "2026-10-22T...",
+  "path": "/api/productos"
+}
+```
+
+#### Errores de Validación (400 Bad Request):
+```json
+{
+  "success": false,
+  "message": "Datos de entrada inválidos",
+  "errors": {
+    "nombre": ["El nombre es obligatorio"],
+    "precio": ["El precio debe ser un número positivo"],
+    "stock": ["El stock no puede ser negativo"],
+    "imagenUrl": ["La URL de la imagen debe tener un formato válido"],
+    "categoriaId": ["La categoría con ID 99 no existe"]
+  },
+  "timestamp": "2026-10-22T...",
+  "path": "/api/productos"
+}
+```
+
+### Autenticación ✅ IMPLEMENTADO (HU-03)
+
+| Método | Endpoint | Descripción |
+|--------|----------|-------------|
+| POST | `/api/auth/login` | Iniciar sesión |
+| POST | `/api/auth/register` | Registrar nuevo usuario |
+| POST | `/api/auth/refresh` | Renovar access token |
+| POST | `/api/auth/logout` | Cerrar sesión (requiere auth) |
+| GET | `/api/auth/me` | Obtener usuario actual (requiere auth) |
 
 ### Módulos Pendientes 🚧
 
 | Módulo | Endpoints Planificados | Estado |
 |--------|------------------------|--------|
-| Autenticación | `/api/auth/login`, `/register`, `/refresh` | 🚧 Pendiente |
 | Usuarios | `/api/usuarios` CRUD + roles | 🚧 Pendiente |
 | Categorías | `/api/categorias` CRUD | 🚧 Pendiente |
 | Órdenes | `/api/ordenes` CRUD | 🚧 Pendiente |
@@ -308,6 +384,7 @@ Incluye:
 ## 📚 Documentación API
 
 ### Swagger UI
+
 Disponible en: **http://localhost:3000/docs**
 
 Incluye:
@@ -556,6 +633,10 @@ taskkill /F /IM node.exe
 # Linux/Mac
 killall node
 ```
+
+### Error JWT_SECRET inválido
+- Verificar `.env` tiene `JWT_SECRET` y `JWT_REFRESH_SECRET` con 32+ chars
+- Reiniciar servidor tras cambios en `.env`
 
 ### Migraciones fallan
 ```bash
