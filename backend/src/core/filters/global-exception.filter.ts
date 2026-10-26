@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
+import { ThrottlerException } from '@nestjs/throttler';
 
 @Catch()
 export class GlobalExceptionFilter implements ExceptionFilter {
@@ -21,7 +22,10 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     let message = 'Error interno del servidor';
     let errors: Record<string, string[]> | undefined;
 
-    if (exception instanceof HttpException) {
+    if (exception instanceof ThrottlerException) {
+      status = HttpStatus.TOO_MANY_REQUESTS;
+      message = 'Demasiadas solicitudes. Intente más tarde.';
+    } else if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse();
 

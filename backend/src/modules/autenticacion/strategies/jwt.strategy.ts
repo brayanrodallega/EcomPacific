@@ -20,6 +20,6 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     if (!user) {
       throw new UnauthorizedException('Usuario no encontrado');
     }
-    return payload;
+    return { ...payload, rol: user.rol };
   }
 }

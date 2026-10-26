@@ -15,7 +15,7 @@ import {
 import { Transform, Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class CreateProductoDto {
+export class CrearProductoDto {
   @ApiProperty({ example: 'Laptop Gaming', description: 'Nombre del producto' })
   @IsDefined({ message: 'El nombre es obligatorio' })
   @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
