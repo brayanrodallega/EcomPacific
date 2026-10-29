@@ -67,7 +67,7 @@ export class AutenticacionService {
     const user = await this.userRepository.create({
       ...registerDto,
       password: hashedPassword,
-      rol: registerDto.rol || UserRole.CLIENTE,
+      rol: UserRole.CLIENTE,
     });
 
     const tokens = await this.generarTokens(user);
@@ -155,9 +155,19 @@ export class AutenticacionService {
   }
 
   private async verificarBloqueo(user: any): Promise<boolean> {
-    if (user.bloqueadoHasta && new Date(user.bloqueadoHasta) > new Date()) {
+    if (!user.bloqueadoHasta) {
+      return true;
+    }
+
+    if (new Date(user.bloqueadoHasta) > new Date()) {
       return false;
     }
+
+    // El bloqueo ya expiró: se limpia para devolverle al usuario sus 5 intentos.
+    await this.userRepository.resetLoginAttempts(user.id);
+    user.intentosLogin = 0;
+    user.bloqueadoHasta = null;
+
     return true;
   }
 

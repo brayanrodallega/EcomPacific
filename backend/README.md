@@ -1,6 +1,6 @@
 # EcomPacific - Backend
 
-Backend para la tienda online EcomPacific. API REST construida con NestJS, TypeScript, Sequelize y MySQL.
+API REST para la tienda online EcomPacific. Construida con NestJS, TypeScript, Sequelize y MySQL.
 
 ## 📑 Tabla de Contenido
 
@@ -11,16 +11,18 @@ Backend para la tienda online EcomPacific. API REST construida con NestJS, TypeS
 - [Instalación](#instalación)
 - [Configuración](#configuración)
 - [Base de Datos](#base-de-datos)
+- [Administrador Inicial](#administrador-inicial)
 - [Ejecución](#ejecución)
-- [Documentación API](#documentación-api)
-- [Endpoints Principales](#endpoints-principales)
+- [Endpoints](#endpoints)
+- [Reglas de Negocio](#reglas-de-negocio)
 - [Testing](#testing)
 - [Scripts Disponibles](#scripts-disponibles)
 - [Convenciones](#convenciones)
+- [Troubleshooting](#troubleshooting)
 
 ---
 
-<a id="stack-tecnologico"></a>
+<a id="stack-tecnológico"></a>
 
 ## 🛠 Stack Tecnológico
 
@@ -30,10 +32,10 @@ Backend para la tienda online EcomPacific. API REST construida con NestJS, TypeS
 | **TypeScript** | 5.x | Tipado estático |
 | **Sequelize** | 6.x | ORM para MySQL |
 | **MySQL** | 8.x | Base de datos relacional |
-| **class-validator** | - | Validación de DTOs |
-| **class-transformer** | - | Transformación de objetos |
+| **class-validator** | 0.14.x | Validación de DTOs |
+| **class-transformer** | 0.5.x | Transformación de objetos |
 | **Swagger** | 7.x | Documentación API |
-| **Jest** | 29.x | Testing unitario y e2e |
+| **Jest** | 29.x | Testing |
 | **ESLint + Prettier** | - | Linting y formateo |
 
 ---
@@ -42,19 +44,19 @@ Backend para la tienda online EcomPacific. API REST construida con NestJS, TypeS
 
 ## 🏗 Arquitectura
 
-### Patrón: **Arquitectura Modular (NestJS)**
+### Patrón: Arquitectura Modular (NestJS)
 
-Cada funcionalidad de negocio es un **módulo independiente** que encapsula sus propias capas:
+Cada funcionalidad de negocio es un módulo independiente que encapsula sus capas:
 
 ```
 src/modules/{modulo}/
-├── controllers/     # Capa de presentación (HTTP)
+├── controllers/     # Capa HTTP
 ├── services/        # Lógica de negocio
 ├── repositories/    # Acceso a datos
-├── entities/        # Modelos de BD (Sequelize)
-├── dto/             # Data Transfer Objects + validación
+├── entities/        # Modelos Sequelize
+├── dto/             # DTOs + validación
 ├── interfaces/      # Contratos TypeScript
-├── guards/          # Guards específicos del módulo
+├── guards/          # Guards del módulo
 ├── strategies/      # Estrategias Passport
 └── {modulo}.module.ts
 ```
@@ -64,7 +66,7 @@ src/modules/{modulo}/
 ```
 src/core/
 ├── interceptors/    # TransformResponseInterceptor
-├── pipes/           # ValidationPipe, ParseIntPipe
+├── pipes/           # ValidationPipe
 ├── decorators/      # @Public(), @Roles(), @CurrentUser()
 └── filters/         # GlobalExceptionFilter
 ```
@@ -74,15 +76,14 @@ src/core/
 ```
 Request
   → Middleware (Logger)
-  → Guard (JwtAuthGuard)        // Valida JWT, adjunta req.user
-  → Guard (RolesGuard)          // Valida @Roles()
-  → Pipe (ValidationPipe)       // Valida DTO (class-validator)
+  → Guard (JwtAuthGuard)        # Valida JWT, adjunta req.user
+  → Guard (RolesGuard)          # Valida @Roles()
+  → Pipe (ValidationPipe)       # Valida DTO
   → Controller                  # Recibe request, llama Service
-  → Service                     # Lógica negocio, llama Repository
+  → Service                     # Lógica de negocio, llama Repository
   → Repository                  # Queries Sequelize
-  → Entity (Model)              # Definición tabla BD
-  ← Service                     # Retorna entidad/DTO
-  ← Controller                  # Retorna DTO respuesta
+  → Entity                      # Modelo de tabla
+  ← Controller                  # Retorna DTO
   → Interceptor                 # Envuelve: { success, data, timestamp, path }
   → Response JSON
 ```
@@ -97,36 +98,21 @@ Request
 backend/
 ├── src/
 │   ├── app.module.ts              # Módulo raíz
-│   ├── main.ts                    # Bootstrap + config global
-│   ├── config/
-│   │   └── configuracion.ts       # Config tipada con Zod
-│   ├── middlewares/
-│   │   └── logger.middleware.ts   # Log de requests HTTP
-│   ├── core/                      # Utilidades globales
-│   │   ├── interceptors/
-│   │   ├── pipes/
-│   │   ├── filters/               # GlobalExceptionFilter
-│   │   ├── decorators/            # @Public(), @Roles(), @CurrentUser()
-│   │   └── guards/                # JwtAuthGuard, RolesGuard, ThrottlerGuard
-│   ├── modules/                   # Módulos de funcionalidad
-│   │   ├── productos/             # Catálogo productos ✅ IMPLEMENTADO
-│   │   ├── autenticacion/         # Login, register, refresh, JWT ✅ IMPLEMENTADO
-│   │   ├── usuarios/              # CRUD usuarios + roles (PENDIENTE)
-│   │   ├── categorias/            # Gestión categorías (PENDIENTE)
-│   │   ├── ordenes/               # Órdenes de compra (PENDIENTE)
-│   │   ├── carrito/               # Carrito de compras (PENDIENTE)
+│   ├── main.ts                    # Bootstrap + configuración global
+│   ├── config/configuracion.ts    # Config tipada con Zod
+│   ├── middlewares/               # Logger de requests
+│   ├── core/                      # Interceptores, filtros, pipes, decoradores
+│   ├── modules/
+│   │   ├── productos/             # Catálogo, creación y edición ✅
+│   │   ├── autenticacion/         # Login, JWT, roles ✅
+│   │   ├── categorias/            # Solo entidad (pendiente)
 │   │   └── compartido/            # DatabaseModule (Sequelize)
-│   └── utils/
-│       └── logger.enum.ts
-├── test/                          # Tests Jest (unit + e2e)
-├── src/migrations/                # Migraciones Sequelize
-├── src/config/database.config.js  # Config Sequelize CLI
-├── .sequelizerc                   # Config rutas Sequelize CLI
-├── .env.example                   # Variables de entorno ejemplo
+│   ├── migrations/                # Migraciones Sequelize
+│   └── config/database.config.js  # Config Sequelize CLI
+├── test/                          # Configuración Jest (sin specs aún)
+├── .env.example
 ├── package.json
-├── tsconfig.json
-├── nest-cli.json
-└── .gitignore
+└── tsconfig.json
 ```
 
 ---
@@ -138,7 +124,7 @@ backend/
 - **Node.js** >= 18.x
 - **npm** >= 9.x
 - **MySQL** >= 8.x (o MariaDB 10.x)
-- **MySQL Workbench** (opcional, para gestión visual)
+- **MySQL Workbench** (opcional)
 
 ---
 
@@ -147,15 +133,10 @@ backend/
 ## 📦 Instalación
 
 ```bash
-# 1. Clonar repositorio
 cd backend
-
-# 2. Instalar dependencias
 npm install
-
-# 3. Configurar variables de entorno
 cp .env.example .env
-# Editar .env con tus credenciales reales
+# Editar .env con las credenciales reales
 ```
 
 ---
@@ -164,20 +145,24 @@ cp .env.example .env
 
 ## ⚙️ Configuración
 
-Edita `.env` con tus valores:
-
 ```env
 # App
 NODE_ENV=development
 PORT=3000
 API_PREFIX=api
 
-# Database (MySQL)
+# Base de datos
 DB_HOST=localhost
 DB_PORT=3306
 DB_USER=root
 DB_PASSWORD=tu_password_mysql
 DB_NAME=ecompacific
+
+# JWT
+JWT_SECRET=tu_secret_de_al_menos_32_caracteres
+JWT_EXPIRES_IN=15m
+JWT_REFRESH_SECRET=otro_secret_de_al_menos_32_caracteres
+JWT_REFRESH_EXPIRES_IN=7d
 
 # Bcrypt
 BCRYPT_ROUNDS=10
@@ -190,6 +175,8 @@ SWAGGER_ENABLED=true
 SWAGGER_PATH=docs
 ```
 
+> Las variables JWT deben tener **32 caracteres o más**. El servidor no arranca si faltan.
+
 ---
 
 <a id="base-de-datos"></a>
@@ -199,37 +186,49 @@ SWAGGER_PATH=docs
 ### Migraciones (Sequelize CLI)
 
 ```bash
-# Crear migración
-npm run migration:create --name=nombre-migracion
-
-# Ejecutar migraciones pendientes
-npm run db:migrate
-
-# Revertir última migración
-npm run db:migrate:undo
-
-# Ver estado
-npx sequelize-cli db:migrate:status
+npm run migration:create --name=nombre-migracion   # Crear
+npm run db:migrate                                 # Ejecutar pendientes
+npm run db:migrate:undo                            # Revertir última
+npx sequelize-cli db:migrate:status                # Ver estado
 ```
 
-### Migración Inicial (ya incluida)
+### Tablas existentes
 
-Crea las tablas:
-- `usuarios` (con campos para rate limiting: `intentos_login`, `bloqueado_hasta`, `refresh_token`)
-- `categorias`
-- `productos`
-- `carritos`
-- `carrito_items`
-- `ordenes`
-- `orden_items`
+| Tabla | Descripción |
+|-------|-------------|
+| `categorias` | Categorías de productos (`nombre` único) |
+| `productos` | Catálogo. FK `categoria_id` → `categorias` (`ON UPDATE CASCADE`, `ON DELETE RESTRICT`) |
+| `usuarios` | Cuentas y roles. Incluye `intentos_login`, `ultimo_login_fallido`, `bloqueado_hasta`, `refresh_token` |
 
-### Sincronización Automática (Desarrollo)
+### Tablas planificadas (aún no existen)
 
-En `DatabaseModule`:
-```typescript
-synchronize: process.env.NODE_ENV !== 'production',
+- `carritos`, `carrito_items`
+- `ordenes`, `orden_items`
+
+> `synchronize: true` está activo solo en desarrollo. En producción se usan migraciones.
+
+---
+
+<a id="administrador-inicial"></a>
+
+## 👤 Administrador Inicial
+
+**No existe registro público de administradores.** El primer admin se crea manualmente.
+
+```bash
+# 1. Generar el hash de la contraseña
+node -e "console.log(require('bcrypt').hashSync('TuPasswordSegura', 10))"
 ```
-> Solo para desarrollo. En producción **usa migraciones**.
+
+```sql
+-- 2. Insertar el usuario con rol ADMIN
+INSERT INTO usuarios (nombre, email, password, rol, activo, creado_en, actualizado_en)
+VALUES ('Administrador', 'admin@ejemplo.com', '<HASH_GENERADO>', 'ADMIN', 1, NOW(), NOW());
+```
+
+Luego se inicia sesión normalmente con `POST /api/auth/login`.
+
+> La contraseña del administrador **no debe** quedar en el repositorio.
 
 ---
 
@@ -238,88 +237,99 @@ synchronize: process.env.NODE_ENV !== 'production',
 ## 🚀 Ejecución
 
 ```bash
-# Desarrollo (watch mode)
+# Desarrollo (watch)
 npm run start:dev
 
 # Producción
 npm run build
 npm run start:prod
-
-# Debug
-npm run start:debug
 ```
+
+> La salida real del build es `dist/src/main.js`; `start:prod` ya apunta a esa ruta.
 
 ### Verificar que funciona
 
 - **API:** http://localhost:3000/api
 - **Swagger:** http://localhost:3000/docs
-- **Health check:** http://localhost:3000/api/productos
+- **Catálogo:** http://localhost:3000/api/productos
 
 ---
 
-<a id="documentación-api"></a>
+<a id="endpoints"></a>
 
-## 📚 Documentación API
+## 🔗 Endpoints
 
-### Swagger UI
-
-Disponible en: **http://localhost:3000/docs**
-
-Incluye:
-- Todos los endpoints con parámetros
-- Esquemas de request/response
-- Ejemplos de uso
-
-### Exportar para Postman
-1. Abre http://localhost:3000/docs
-2. Click **Download** → `openapi.json`
-2. En Postman: **Import** → File → `openapi.json`
-
----
-
-<a id="endpoints-principales"></a>
-
-## 🔗 Endpoints Principales
-
-### Productos (Público) ✅ IMPLEMENTADO (HU-01)
-
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| GET | `/api/productos` | Listar productos activos |
-| GET | `/api/productos/:id` | Obtener producto por ID |
-
-### Respuesta Producto (Campos públicos)
-
-```json
-{
-  "id": 1,
-  "nombre": "Laptop Gaming",
-  "imagenUrl": "https://ejemplo.com/imagen.jpg",
-  "precio": 2500000,
-  "disponible": true
-}
-```
-
-### Gestión de Productos (Admin) ✅ IMPLEMENTADO (HU-04)
+### Resumen
 
 | Método | Endpoint | Descripción | Auth |
 |--------|----------|-------------|------|
-| POST | `/api/productos` | Registrar nuevo producto | Bearer Token (`rol: ADMIN`) |
+| GET | `/api/productos` | Catálogo de productos activos | Público |
+| GET | `/api/productos/:id` | Detalle público de un producto | Público |
+| GET | `/api/productos/admin` | Listado completo, incluidos inactivos | ADMIN |
+| GET | `/api/productos/:id/detalle` | Detalle completo para el formulario admin | ADMIN |
+| POST | `/api/productos` | Crear producto | ADMIN |
+| PATCH | `/api/productos/:id` | Actualizar producto | ADMIN |
+| POST | `/api/auth/login` | Iniciar sesión | Público |
+| POST | `/api/auth/register` | Registrar usuario | Público |
+| POST | `/api/auth/refresh` | Renovar access token | Público |
+| POST | `/api/auth/logout` | Cerrar sesión | Autenticado |
+| GET | `/api/auth/me` | Perfil del usuario actual | Autenticado |
 
-#### Body Request `POST /api/productos`:
+---
+
+### HU-01 — Catálogo público
+
+#### `GET /api/productos`
+
+Devuelve solo productos con `activo = true`, ordenados por fecha de creación descendente.
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "nombre": "Teclado Mecánico RGB",
+      "imagenUrl": "https://ejemplo.com/teclado.jpg",
+      "precio": 240000,
+      "disponible": true
+    }
+  ],
+  "timestamp": "2026-10-24T16:00:00.000Z",
+  "path": "/api/productos"
+}
+```
+
+#### `GET /api/productos/:id`
+
+- `200` con el producto.
+- `404` si no existe **o si está inactivo**.
+
+Campos públicos: `id`, `nombre`, `imagenUrl`, `precio`, `disponible`.
+`disponible = activo && stock > 0`.
+
+---
+
+### HU-04 — Crear producto
+
+#### `POST /api/productos`
+
+Requiere `Authorization: Bearer <token>` de un usuario con rol `ADMIN`.
+
 ```json
 {
   "nombre": "Laptop Gaming",
   "descripcion": "Laptop para gaming de alto rendimiento",
   "precio": 2500000,
   "stock": 10,
-  "imagenUrl": "https://ejemplo.com/imagen.jpg",
+  "imagenUrl": "https://ejemplo.com/laptop.jpg",
   "categoriaId": 1,
   "activo": true
 }
 ```
 
-#### Respuesta Exitosa (201 Created):
+**Respuesta `201`:**
+
 ```json
 {
   "success": true,
@@ -329,19 +339,20 @@ Incluye:
     "descripcion": "Laptop para gaming de alto rendimiento",
     "precio": 2500000,
     "stock": 10,
-    "imagenUrl": "https://ejemplo.com/imagen.jpg",
+    "imagenUrl": "https://ejemplo.com/laptop.jpg",
     "categoriaId": 1,
     "activo": true,
     "disponible": true,
-    "creadoEn": "2026-10-22T...",
-    "actualizadoEn": "2026-10-22T..."
+    "creadoEn": "2026-10-24T16:00:00.000Z",
+    "actualizadoEn": "2026-10-24T16:00:00.000Z"
   },
-  "timestamp": "2026-10-22T...",
+  "timestamp": "2026-10-24T16:00:00.000Z",
   "path": "/api/productos"
 }
 ```
 
-#### Errores de Validación (400 Bad Request):
+**Errores de validación `400`:**
+
 ```json
 {
   "success": false,
@@ -353,49 +364,197 @@ Incluye:
     "imagenUrl": ["La URL de la imagen debe tener un formato válido"],
     "categoriaId": ["La categoría con ID 99 no existe"]
   },
-  "timestamp": "2026-10-22T...",
+  "timestamp": "2026-10-24T16:00:00.000Z",
   "path": "/api/productos"
 }
 ```
 
-### Autenticación ✅ IMPLEMENTADO (HU-03)
+---
 
-| Método | Endpoint | Descripción |
-|--------|----------|-------------|
-| POST | `/api/auth/login` | Iniciar sesión |
-| POST | `/api/auth/register` | Registrar nuevo usuario |
-| POST | `/api/auth/refresh` | Renovar access token |
-| POST | `/api/auth/logout` | Cerrar sesión (requiere auth) |
-| GET | `/api/auth/me` | Obtener usuario actual (requiere auth) |
+### HU-05 — Actualizar producto
 
-### Módulos Pendientes 🚧
+#### `GET /api/productos/admin`
 
-| Módulo | Endpoints Planificados | Estado |
-|--------|------------------------|--------|
-| Usuarios | `/api/usuarios` CRUD + roles | 🚧 Pendiente |
-| Categorías | `/api/categorias` CRUD | 🚧 Pendiente |
-| Órdenes | `/api/ordenes` CRUD | 🚧 Pendiente |
-| Carrito | `/api/carrito` CRUD | 🚧 Pendiente |
+Requiere rol `ADMIN`. Devuelve **todos** los productos, activos e inactivos,
+ordenados por fecha de creación descendente. Cada elemento usa `ProductoDetalleDto`,
+igual que el detalle individual.
+
+Sirve para que el panel administrativo pueda encontrar y reactivar un producto
+desactivado, ya que el catálogo público (`GET /api/productos`) los oculta.
+
+- `200` con `ProductoDetalleDto[]`.
+- `401` sin token.
+- `403` sin rol `ADMIN`.
+
+> La ruta `/api/productos/admin` está declarada antes de `/api/productos/:id`
+> para que `admin` no se interprete como un `id`.
+
+#### `GET /api/productos/:id/detalle`
+
+Requiere rol `ADMIN`. Devuelve **todos** los campos del producto, incluidos los que
+el catálogo público no expone: `descripcion`, `stock`, `activo` y `categoriaId`.
+
+Se usa para precargar el formulario de edición. A diferencia del `GET :id` público,
+**funciona también con productos inactivos**, para poder reactivarlos.
+
+- `200` con `ProductoDetalleDto`.
+- `401` sin token.
+- `403` sin rol `ADMIN`.
+- `404` si el producto no existe.
+
+#### `PATCH /api/productos/:id`
+
+Requiere rol `ADMIN`. Todos los campos son opcionales, pero conservan las
+validaciones de creación.
+
+```json
+{
+  "precio": 2600000,
+  "stock": 8
+}
+```
+
+**Respuesta `200`:** misma estructura que la creación, con `actualizadoEn` renovado.
+
+**Reglas:**
+
+- Solo se modifican los campos enviados.
+- Campos permitidos: `nombre`, `descripcion`, `precio`, `stock`, `imagenUrl`,
+  `categoriaId`, `activo`.
+- `id`, `creadoEn` y `actualizadoEn` no se pueden modificar (el `ValidationPipe`
+  rechaza campos no declarados).
+- Si el producto no existe: `404 Producto con ID X no encontrado`.
+- Body vacío: `400 No se enviaron campos para actualizar`.
+- Si `categoriaId` no existe: `400` con `errors.categoriaId`.
+- No hay `DELETE`: para retirar un producto del catálogo se envía `{ "activo": false }`.
+
+**Códigos de respuesta:**
+
+| Código | Caso |
+|--------|------|
+| `200` | Actualizado |
+| `400` | Validación fallida o body vacío |
+| `401` | Sin token o token inválido |
+| `403` | Usuario sin rol `ADMIN` |
+| `404` | Producto inexistente |
 
 ---
 
-<a id="documentación-api"></a>
+### HU-03 — Autenticación
 
-## 📚 Documentación API
+#### `POST /api/auth/login`
 
-### Swagger UI
+```json
+{
+  "email": "admin@ecompacific.com",
+  "password": "TuPasswordSegura"
+}
+```
 
-Disponible en: **http://localhost:3000/docs**
+**Respuesta `200`:**
 
-Incluye:
-- Todos los endpoints con parámetros
-- Esquemas de request/response
-- Ejemplos de uso
+```json
+{
+  "success": true,
+  "data": {
+    "accessToken": "eyJhbGciOi...",
+    "refreshToken": "eyJhbGciOi...",
+    "usuario": {
+      "id": 1,
+      "email": "admin@ecompacific.com",
+      "nombre": "Administrador",
+      "rol": "ADMIN"
+    }
+  },
+  "timestamp": "2026-10-24T16:00:00.000Z",
+  "path": "/api/auth/login"
+}
+```
 
-### Exportar para Postman
-1. Abre http://localhost:3000/docs
-2. Click **Download** → `openapi.json`
-3. En Postman: **Import** → File → `openapi.json`
+**Seguridad:**
+
+- Contraseñas con bcrypt (10 rounds).
+- Mensaje genérico `Credenciales inválidas`: no revela si el correo existe.
+- Se ejecuta una comparación bcrypt ficticia cuando el usuario no existe,
+  para evitar enumeración por tiempo de respuesta.
+- **Bloqueo:** 5 intentos fallidos → cuenta bloqueada 15 minutos.
+  Del 6.º intento en adelante: `Cuenta bloqueada temporalmente. Intente más tarde.`
+- Un login exitoso reinicia el contador y limpia `bloqueado_hasta`.
+- Al expirar el bloqueo, el contador se reinicia automáticamente: el usuario
+  recupera sus 5 intentos. Un solo fallo después del bloqueo ya no lo vuelve a
+  bloquear 15 minutos.
+- **Rate limiting:** 20 solicitudes por minuto solo en este endpoint. Al excederlo:
+  `429 Demasiadas solicitudes. Intente más tarde.`
+
+#### `POST /api/auth/register`
+
+```json
+{
+  "nombre": "Juan",
+  "email": "juan@ejemplo.com",
+  "password": "Password123"
+}
+```
+
+El rol se asigna automáticamente como `CLIENTE`. El body **no acepta** `rol`:
+si se envía, la respuesta es `400` (`El campo rol no está permitido`).
+Los administradores se crean solo con el procedimiento manual descrito arriba.
+
+#### `POST /api/auth/refresh`
+
+```json
+{ "refreshToken": "eyJhbGciOi..." }
+```
+
+Rota el refresh token: el anterior deja de ser válido.
+
+#### `POST /api/auth/logout`
+
+Requiere `Authorization: Bearer <accessToken>`. Elimina el refresh token de la BD.
+
+#### `GET /api/auth/me`
+
+Requiere `Authorization: Bearer <accessToken>`. Devuelve el perfil sin contraseña.
+
+**Limitación de revocación:** el logout invalida el refresh token, pero el access
+token sigue siendo válido hasta expirar (máximo 15 minutos). No hay lista negra
+de tokens; la revocación inmediata requeriría almacenar los JWT emitidos.
+
+---
+
+<a id="reglas-de-negocio"></a>
+
+## 📌 Reglas de Negocio
+
+### Protección del historial de pedidos
+
+Editar un producto **no debe alterar** el nombre ni el precio de pedidos ya registrados.
+
+Para garantizarlo, las líneas de pedido guardarán una copia inmutable al momento
+de la compra:
+
+| Campo | Propósito |
+|-------|-----------|
+| `producto_id` | Referencia suave al catálogo actual |
+| `nombre_producto` | Copia del nombre al momento de la compra |
+| `precio_unitario` | Copia del precio al momento de la compra |
+
+Reglas asociadas:
+
+- Los pedidos históricos se muestran leyendo **esas copias**, nunca con un `JOIN`
+  a `productos`.
+- No se permite `ON UPDATE CASCADE` desde `orden_items` hacia `productos`.
+- Los productos no se eliminan físicamente: se desactivan con `activo = false`.
+- Editar un producto escribe únicamente en `productos`.
+
+> Estado: el módulo de órdenes aún no existe, por lo que esta regla está definida
+> por diseño pero todavía no es verificable en ejecución.
+
+### Campos actualizables de un producto
+
+- Permitidos: `nombre`, `descripcion`, `precio`, `stock`, `imagenUrl`, `categoriaId`, `activo`.
+- Prohibidos: `id`, `creadoEn`, `actualizadoEn`.
+- Sin `upsert` ni `findOrCreate`: si el producto no existe, se responde `404`.
 
 ---
 
@@ -404,28 +563,15 @@ Incluye:
 ## 🧪 Testing
 
 ```bash
-# Tests unitarios
-npm run test
-
-# Tests en watch mode
-npm run test:watch
-
-# Cobertura
-npm run test:cov
-
-# Tests e2e
-npm run test:e2e
+npm run test        # Unitarios
+npm run test:watch  # Watch mode
+npm run test:cov    # Cobertura
+npm run test:e2e    # End-to-end
 ```
 
-### Estructura de Tests
-
-```
-test/
-├── jest.json          # Config unit tests
-├── jest-e2e.json      # Config e2e tests
-├── jest.setup.ts      # Setup global
-└── app.e2e-spec.ts    # Tests e2e ejemplo
-```
+Estado actual: la configuración de Jest existe, pero **no hay specs escritos**.
+Las historias HU-01 a HU-05 se verificaron manualmente con Swagger, Postman e
+`Invoke-RestMethod`.
 
 ---
 
@@ -441,15 +587,12 @@ test/
   "start:prod": "node dist/main",
   "build": "nest build",
   "prebuild": "rimraf dist",
-  
   "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
   "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-  
   "test": "jest --config ./test/jest.json",
   "test:watch": "jest --watch",
   "test:cov": "jest --coverage",
   "test:e2e": "jest --config ./test/jest-e2e.json",
-  
   "db:migrate": "sequelize-cli db:migrate",
   "db:migrate:undo": "sequelize-cli db:migrate:undo",
   "migration:create": "sequelize-cli migration:generate --name"
@@ -466,166 +609,59 @@ test/
 
 | Elemento | Convención | Ejemplo |
 |----------|------------|---------|
-| Archivos | kebab-case | `product.entity.ts` |
+| Archivos | kebab-case | `crear-producto.dto.ts` |
 | Clases | PascalCase | `ProductoRepository` |
-| Métodos/Props | camelCase | `findById()` |
-| Constantes | UPPER_SNAKE | `MAX_RETRIES` |
+| Métodos/Props | camelCase | `actualizarProducto()` |
+| Constantes | UPPER_SNAKE | `MAX_INTENTOS` |
 | Enums | PascalCase | `UserRole` |
 | Tablas BD | snake_case plural | `productos` |
 | Columnas BD | snake_case | `creado_en` |
 
 ### DTOs
 
-- **Response:** `ProductoResponseDto` (transforma entidad → público, excluye campos internos)
+- **Entrada:** `CrearProductoDto`, `ActualizarProductoDto` (`PartialType` del anterior)
+- **Salida pública:** `ProductoResponseDto` (solo campos públicos)
+- **Salida administrativa:** `ProductoDetalleDto` (todos los campos)
 
-### Respuestas API (Estándar)
+### Validaciones
+
+- `class-validator` + `class-transformer`
+- `ValidationPipe` global con `whitelist`, `transform` y `forbidNonWhitelisted`
+- Mensajes en español, por campo
+
+### Respuestas API
 
 **Éxito:**
+
 ```json
 {
   "success": true,
-  "data": { ... },
-  "timestamp": "2026-10-21T11:52:01.123Z",
+  "data": { },
+  "timestamp": "2026-10-24T16:00:00.000Z",
   "path": "/api/productos"
 }
 ```
 
 **Error:**
+
 ```json
 {
   "success": false,
-  "message": "Error de validación",
-  "errors": {
-    "campo": ["mensaje de error"]
-  },
-  "timestamp": "2026-10-21T11:52:01.123Z",
+  "message": "Datos de entrada inválidos",
+  "errors": { "campo": ["mensaje de error"] },
+  "timestamp": "2026-10-24T16:00:00.000Z",
   "path": "/api/productos"
 }
 ```
 
-### Validaciones
-
-- **DTOs:** `class-validator` + `class-transformer`
-- **Pipe global:** `ValidationPipe` (whitelist, transform, forbidNonWhitelisted)
-- **Mensajes:** En español, descriptivos
-
 ---
 
-<a id="scripts-disponibles"></a>
-
-## 📜 Scripts Disponibles
-
-```json
-{
-  "start": "nest start",
-  "start:dev": "nest start --watch",
-  "start:debug": "nest start --debug --watch",
-  "start:prod": "node dist/main",
-  "build": "nest build",
-  "prebuild": "rimraf dist",
-  
-  "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
-  "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-  
-  "test": "jest --config ./test/jest.json",
-  "test:watch": "jest --watch",
-  "test:cov": "jest --coverage",
-  "test:e2e": "jest --config ./test/jest-e2e.json",
-  
-  "db:migrate": "sequelize-cli db:migrate",
-  "db:migrate:undo": "sequelize-cli db:migrate:undo",
-  "migration:create": "sequelize-cli migration:generate --name"
-}
-```
-
----
-
-<a id="convenciones"></a>
-
-## 📝 Convenciones
-
-### Nomenclatura
-
-| Elemento | Convención | Ejemplo |
-|----------|------------|---------|
-| Archivos | kebab-case | `product.entity.ts` |
-| Clases | PascalCase | `ProductoRepository` |
-| Métodos/Props | camelCase | `findById()` |
-| Constantes | UPPER_SNAKE | `MAX_RETRIES` |
-| Enums | PascalCase | `UserRole` |
-| Tablas BD | snake_case plural | `productos` |
-| Columnas BD | snake_case | `creado_en` |
-
-### DTOs
-
-- **Response:** `ProductoResponseDto` (transforma entidad → público, excluye campos internos)
-
-### Respuestas API (Estándar)
-
-**Éxito:**
-```json
-{
-  "success": true,
-  "data": { ... },
-  "timestamp": "2026-10-21T11:52:01.123Z",
-  "path": "/api/productos"
-}
-```
-
-**Error:**
-```json
-{
-  "success": false,
-  "message": "Error de validación",
-  "errors": {
-    "campo": ["mensaje de error"]
-  },
-  "timestamp": "2026-10-21T11:52:01.123Z",
-  "path": "/api/productos"
-}
-```
-
-### Validaciones
-
-- **DTOs:** `class-validator` + `class-transformer`
-- **Pipe global:** `ValidationPipe` (whitelist, transform, forbidNonWhitelisted)
-- **Mensajes:** En español, descriptivos
-
----
-
-## 🔄 Agregar Nuevo Módulo
-
-```bash
-# 1. Crear estructura
-mkdir -p src/modules/nuevo/{controllers,services,repositories,entities,dto,interfaces}
-
-# 2. Crear entidad (Sequelize)
-# src/modules/nuevo/entities/nuevo.entity.ts
-
-# 2. Crear repository
-# src/modules/nuevo/repositories/nuevo.repository.ts
-
-# 3. Crear service
-# src/modules/nuevo/services/nuevo.service.ts
-
-# 4. Crear controller
-# src/modules/nuevo/controllers/nuevo.controller.ts
-
-# 5. Crear DTOs
-# src/modules/nuevo/dto/
-
-# 6. Crear module
-# src/modules/nuevo/nuevo.module.ts
-
-# 7. Registrar en app.module.ts
-imports: [NuevoModule, ...]
-```
-
----
+<a id="troubleshooting"></a>
 
 ## 🐛 Troubleshooting
 
 ### Puerto en uso (EADDRINUSE)
+
 ```bash
 # Windows
 taskkill /F /IM node.exe
@@ -635,26 +671,39 @@ killall node
 ```
 
 ### Error JWT_SECRET inválido
-- Verificar `.env` tiene `JWT_SECRET` y `JWT_REFRESH_SECRET` con 32+ chars
-- Reiniciar servidor tras cambios en `.env`
+
+- Verificar que `JWT_SECRET` y `JWT_REFRESH_SECRET` tengan 32+ caracteres.
+- Reiniciar el servidor tras cambiar `.env`.
 
 ### Migraciones fallan
+
 ```bash
-# Verificar conexión MySQL
 mysql -u root -p -e "SHOW DATABASES;"
-
-# Verificar BD existe
 mysql -u root -p -e "USE ecompacific; SHOW TABLES;"
-
-# Recrear BD si necesario
 mysql -u root -p -e "DROP DATABASE ecompacific; CREATE DATABASE ecompacific;"
 npm run db:migrate
 ```
 
-### Dependencias no resueltas
-```bash
-rm -rf node_modules package-lock.json
-npm install
+### `curl` en PowerShell
+
+`curl` es alias de `Invoke-WebRequest`, que no acepta `-H` ni `-d` igual que curl.
+Usar `curl.exe` o, mejor, `Invoke-RestMethod`:
+
+```powershell
+$body  = @{ email = 'admin@ecompacific.com'; password = 'TuPasswordSegura' } | ConvertTo-Json
+$login = Invoke-RestMethod -Uri 'http://localhost:3000/api/auth/login' -Method Post `
+  -ContentType 'application/json' -Body $body
+$h = @{ Authorization = "Bearer $($login.data.accessToken)" }
+
+Invoke-RestMethod -Uri 'http://localhost:3000/api/productos/1' -Method Patch `
+  -ContentType 'application/json' -Headers $h -Body '{"stock":8}'
+```
+
+### Cuenta bloqueada por intentos fallidos
+
+```sql
+UPDATE usuarios SET intentos_login = 0, bloqueado_hasta = NULL
+WHERE email = 'admin@ecompacific.com';
 ```
 
 ---
@@ -665,12 +714,4 @@ ISC - Proyecto académico EcomPacific
 
 ---
 
-## 👥 Equipo Backend
-
-- **Arquitectura:** NestJS Modular
-- **Base de datos:** MySQL + Sequelize
-- **Documentación:** Swagger/OpenAPI 3.0
-
----
-
-*Última actualización: Octubre 2026*
+*Última actualización: 24 de octubre de 2026*

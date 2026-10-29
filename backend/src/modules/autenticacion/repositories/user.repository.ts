@@ -90,7 +90,11 @@ export class UserRepository {
   async resetLoginAttempts(id: number): Promise<User | null> {
     const user = await this.findById(id);
     if (!user) return null;
-    return user.update({ intentosLogin: 0, ultimoLoginFallido: null });
+    return user.update({
+      intentosLogin: 0,
+      ultimoLoginFallido: null,
+      bloqueadoHasta: null,
+    });
   }
 
   async setLockout(id: number): Promise<User | null> {

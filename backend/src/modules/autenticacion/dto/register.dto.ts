@@ -1,6 +1,5 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, MaxLength, IsOptional, IsEnum } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MaxLength, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { UserRole } from '../entities/user.entity';
 
 export class RegisterDto {
   @ApiProperty({ example: 'Juan' })
@@ -9,7 +8,7 @@ export class RegisterDto {
   @MaxLength(100, { message: 'El nombre no puede exceder 100 caracteres' })
   nombre: string;
 
-  @ApiProperty({ example: 'admin@ecompacific.com' })
+  @ApiProperty({ example: 'juan@ejemplo.com' })
   @IsEmail({}, { message: 'El email debe tener un formato válido' })
   @IsNotEmpty({ message: 'El email es obligatorio' })
   email: string;
@@ -20,9 +19,4 @@ export class RegisterDto {
   @MinLength(6, { message: 'La contraseña debe tener al menos 6 caracteres' })
   @MaxLength(50, { message: 'La contraseña no puede exceder 50 caracteres' })
   password: string;
-
-  @ApiProperty({ enum: UserRole, required: false })
-  @IsOptional()
-  @IsEnum(UserRole, { message: 'Rol inválido' })
-  rol?: UserRole;
 }

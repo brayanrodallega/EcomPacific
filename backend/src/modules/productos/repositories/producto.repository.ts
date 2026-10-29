@@ -2,6 +2,13 @@ import { Injectable, Inject } from '@nestjs/common';
 import { getModelToken } from '@nestjs/sequelize';
 import { Product } from '../entities/product.entity';
 
+export type CamposActualizablesProducto = Partial<
+  Pick<
+    Product,
+    'nombre' | 'descripcion' | 'precio' | 'stock' | 'imagenUrl' | 'categoriaId' | 'activo'
+  >
+>;
+
 @Injectable()
 export class ProductoRepository {
   constructor(
@@ -22,6 +29,12 @@ export class ProductoRepository {
     return this.productModel.findByPk(id);
   }
 
+  async findAll(): Promise<Product[]> {
+    return this.productModel.findAll({
+      order: [['creadoEn', 'DESC']],
+    });
+  }
+
   async create(data: {
     nombre: string;
     descripcion: string;
@@ -32,5 +45,12 @@ export class ProductoRepository {
     activo: boolean;
   }): Promise<Product> {
     return this.productModel.create(data);
+  }
+
+  async actualizar(
+    producto: Product,
+    cambios: CamposActualizablesProducto,
+  ): Promise<Product> {
+    return producto.update(cambios);
   }
 }
