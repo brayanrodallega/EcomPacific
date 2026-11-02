@@ -24,7 +24,7 @@ export function ProductCard({ product }: { product: Product }) {
   const hasImage = Boolean(product.imagenUrl?.trim()) && !imageFailed;
 
   return (
-    <article className="product-card">
+    <a className="product-card product-card-link" href={`/productos/${product.id}`} aria-label={`Ver detalle de ${product.nombre || 'producto'}`}>
       <div className="product-media">
         {hasImage ? (
           <img
@@ -50,6 +50,6 @@ export function ProductCard({ product }: { product: Product }) {
         <h3>{product.nombre || 'Producto sin nombre'}</h3>
         <p className="product-price">{currency.format(Number(product.precio) || 0)}</p>
       </div>
-    </article>
+    </a>
   );
 }

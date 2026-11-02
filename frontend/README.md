@@ -1,6 +1,6 @@
 # EcomPacific — Frontend
 
-Dashboard web para consultar el catálogo real que expone el backend de EcomPacific. Esta fase cubre solo la vista pública de productos; no incluye autenticación, carrito, pagos ni administración.
+Frontend de EcomPacific para consultar el catálogo, ver detalles de productos e iniciar sesión en el dashboard.
 
 ## Tecnologías
 
@@ -55,7 +55,7 @@ El DTO público de producto contiene `id`, `nombre`, `imagenUrl`, `precio` y `di
 
 - No se encontró un endpoint de categorías ni una relación de categoría incluida en el DTO público; por eso el dashboard no muestra filtros de categoría.
 - El DTO excluye descripción y stock; la interfaz no presenta esos campos.
-- No se añadió una vista de detalle: el endpoint por ID devuelve el mismo DTO público y no aporta más información al catálogo actual.
+- El detalle usa `GET /api/productos/:id`. El DTO publico entrega los mismos campos basicos del catálogo; descripcion, categoria y stock no se exponen.
 - En despliegues donde frontend y backend usan orígenes distintos, el equipo debe configurar `CORS_ORIGIN` en el backend para permitir el dominio del frontend. El proxy de Vite cubre el flujo local de desarrollo.
 - Si el backend no está ejecutándose o la base de datos no contiene productos activos, la interfaz muestra el error o el estado vacío correspondiente. No se usan datos ficticios.
 
@@ -66,3 +66,21 @@ El DTO público de producto contiene `id`, `nombre`, `imagenUrl`, `precio` y `di
 - Estados de carga, error recuperable, catálogo vacío y búsqueda sin coincidencias.
 - Indicador de disponibilidad y marcador visual si falta o falla una imagen.
 - Navegación por teclado, etiquetas accesibles y respeto por la preferencia de movimiento reducido.
+
+## Rutas y autenticación
+
+- `/` muestra el catálogo y consume `GET /api/productos`.
+- `/productos/:id` consulta `GET /api/productos/:id`.
+- `/login` envía `POST /api/auth/login` con `{ email, password }`. El backend devuelve `{ accessToken, refreshToken, usuario }` dentro del sobre estándar `{ success, data, timestamp, path }`.
+- La sesión se conserva en `sessionStorage` y `/dashboard` requiere esa sesión. Al cerrar sesión se eliminan los tokens del navegador.
+
+## Publicacion en Vercel
+
+1. Importa el repositorio y configura `frontend` como **Root Directory**.
+2. Usa `npm run build` como comando de build y `dist` como directorio de salida.
+3. Define `VITE_API_URL` con la URL pública base del backend, incluyendo el prefijo de API (por ejemplo, `https://api.tu-dominio.com/api`). No incluyas credenciales; Vite expone las variables `VITE_*` al navegador.
+4. En el backend, configura `CORS_ORIGIN` para permitir el dominio asignado al frontend.
+5. `vercel.json` reescribe las rutas de la SPA a `index.html`, para que `/login`, `/dashboard` y `/productos/:id` abran también al recargar.
+6. Después del deploy, comprueba catálogo, detalle, login y recarga directa de cada ruta contra el backend publicado.
+
+En desarrollo, Vite conserva el proxy `/api` hacia `VITE_API_PROXY_TARGET` (por defecto `http://localhost:3000`). Ese valor solo se usa en el servidor local de desarrollo; en producción se debe definir `VITE_API_URL`.
