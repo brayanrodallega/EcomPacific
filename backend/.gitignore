@@ -1,25 +1,32 @@
-# Dependencias
+# Dependencies
 node_modules/
 
-# Compilación
+# Build
 dist/
-build/
 
-# Variables de entorno
+# Environment
 .env
-.env.*
-!.env.example
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
 
 # Logs
 *.log
 npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
 
-# Cobertura de pruebas
+# Test
 coverage/
+.nyc_output/
 
-# Sistema operativo
-.DS_Store
-Thumbs.db
+# Misc
+*.tsbuildinfo
+.eslintcache
