@@ -104,7 +104,9 @@ function App() {
               {search && <button className="clear-search" type="button" onClick={() => setSearch('')} aria-label="Limpiar búsqueda">×</button>}
             </div>
             <div className="catalog-meta">
-              <span className="product-count">{loading ? 'Cargando…' : `${visibleProducts.length} ${visibleProducts.length === 1 ? 'producto' : 'productos'}`}</span>
+              <span className="product-count" role="status" aria-live="polite" aria-atomic="true">
+                {loading ? 'Cargando productos…' : `${visibleProducts.length} ${visibleProducts.length === 1 ? 'producto' : 'productos'}`}
+              </span>
               <label className="sort-control" htmlFor="sort-products">Ordenar por
                 <select id="sort-products" value={sortOrder} onChange={(event) => setSortOrder(event.target.value as SortOrder)}>
                   <option value="recent">Más recientes</option>
