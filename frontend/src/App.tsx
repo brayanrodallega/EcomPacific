@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ProductCard } from './components/ProductCard';
-import { getProducts } from './services/products.service';
+import { ProductDetail } from './components/ProductDetail';
+import { getProductById, getProducts, ProductApiError } from './services/products.service';
 import type { Product } from './types/product';
 
 type SortOrder = 'recent' | 'price-asc' | 'price-desc';
@@ -21,8 +22,23 @@ function App() {
   const [search, setSearch] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('recent');
   const [reload, setReload] = useState(0);
+  const [pathname, setPathname] = useState(() => window.location.pathname);
+  const [detailProduct, setDetailProduct] = useState<Product | null>(null);
+  const [detailLoading, setDetailLoading] = useState(false);
+  const [detailError, setDetailError] = useState('');
+  const [detailNotFound, setDetailNotFound] = useState(false);
 
   useEffect(() => {
+    const syncPath = () => setPathname(window.location.pathname);
+    window.addEventListener('popstate', syncPath);
+    return () => window.removeEventListener('popstate', syncPath);
+  }, []);
+
+  const detailMatch = pathname.match(/^\/productos\/(\d+)\/?$/);
+  const isProductRoute = pathname.startsWith('/productos/');
+
+  useEffect(() => {
+    if (isProductRoute) return;
     const controller = new AbortController();
     setLoading(true);
     setError('');
@@ -36,7 +52,37 @@ function App() {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [reload]);
+  }, [reload, isProductRoute]);
+
+  useEffect(() => {
+    if (!detailMatch) {
+      setDetailProduct(null);
+      setDetailError('');
+      setDetailNotFound(false);
+      setDetailLoading(false);
+      return;
+    }
+
+    const controller = new AbortController();
+    setDetailProduct(null);
+    setDetailError('');
+    setDetailNotFound(false);
+    setDetailLoading(true);
+    getProductById(Number(detailMatch[1]), controller.signal)
+      .then(setDetailProduct)
+      .catch((reason: unknown) => {
+        if (reason instanceof DOMException && reason.name === 'AbortError') return;
+        if (reason instanceof ProductApiError && reason.status === 404) {
+          setDetailNotFound(true);
+          return;
+        }
+        setDetailError(reason instanceof Error ? reason.message : 'No se pudo cargar el producto.');
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setDetailLoading(false);
+      });
+    return () => controller.abort();
+  }, [pathname]);
 
   const visibleProducts = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('es');
@@ -60,7 +106,36 @@ function App() {
         <a className="nav-note" href="#catalogo"><span className="nav-note-dot" /> Hogar, con intención</a>
       </header>
 
-      <main id="inicio">
+      {isProductRoute ? (
+        <main id="inicio">
+          {detailLoading ? (
+            <div className="detail-loading" aria-live="polite">Cargando producto...</div>
+          ) : detailProduct ? (
+            <ProductDetail product={detailProduct} />
+          ) : detailNotFound ? (
+            <section className="message-panel detail-not-found" role="status">
+              <span className="message-icon">!</span>
+              <h1>Producto no encontrado</h1>
+              <p>Este producto no existe o ya no está disponible.</p>
+              <a className="retry-button" href="/#catalogo">Volver al catálogo</a>
+            </section>
+          ) : detailError ? (
+            <section className="message-panel detail-not-found" role="alert">
+              <span className="message-icon">!</span>
+              <h1>No pudimos cargar el producto</h1>
+              <p>{detailError}</p>
+              <a className="retry-button" href="/#catalogo">Volver al catálogo</a>
+            </section>
+          ) : (
+            <section className="message-panel detail-not-found" role="status">
+              <span className="message-icon">!</span>
+              <h1>Producto no encontrado</h1>
+              <p>Este producto no está disponible o el enlace ya no es válido.</p>
+              <a className="retry-button" href="/#catalogo">Volver al catálogo</a>
+            </section>
+          )}
+        </main>
+      ) : <main id="inicio">
         <section className="hero" id="sobre-catalogo" aria-labelledby="hero-title">
           <div className="hero-copy">
             <p className="eyebrow"><span /> OBJETOS PARA VIVIR MEJOR</p>
@@ -156,7 +231,7 @@ function App() {
           )}
           {!loading && !error && products.length > 0 && <p className="catalog-source">Productos publicados por EcomPacific</p>}
         </section>
-      </main>
+      </main>}
 
       <footer className="footer">
         <a className="brand footer-brand" href="#inicio"><span className="brand-symbol" aria-hidden="true"><i /><i /><i /></span><span>Ecom<span className="brand-light">Pacific</span></span></a>
