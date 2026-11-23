@@ -29,6 +29,7 @@ function App() {
   const [detailLoading, setDetailLoading] = useState(false);
   const [detailError, setDetailError] = useState('');
   const [detailNotFound, setDetailNotFound] = useState(false);
+  const [detailReload, setDetailReload] = useState(0);
 
   useEffect(() => {
     const syncPath = () => setPathname(window.location.pathname);
@@ -83,7 +84,7 @@ function App() {
       })
       .finally(() => { if (!controller.signal.aborted) setDetailLoading(false); });
     return () => controller.abort();
-  }, [pathname]);
+  }, [pathname, detailReload]);
 
   const visibleProducts = useMemo(() => {
     const query = search.trim().toLocaleLowerCase('es');
@@ -121,6 +122,7 @@ function App() {
               <span className="message-icon">!</span>
               <h1>No pudimos cargar el producto</h1>
               <p>{detailError}</p>
+              <button className="retry-button" type="button" onClick={() => setDetailReload((value) => value + 1)}>Intentar de nuevo <span aria-hidden="true">↻</span></button>
               <a className="retry-button" href="/#catalogo">Volver al catálogo</a>
             </section>
           ) : (
