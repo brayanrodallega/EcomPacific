@@ -7,9 +7,12 @@ import {
   AutoIncrement,
   AllowNull,
   Default,
+  ForeignKey,
+  BelongsTo,
   HasMany,
 } from 'sequelize-typescript';
 import { Inventario } from '@modules/inventario/entities/inventario.entity';
+import { Categoria } from '@modules/categorias/entities/categoria.entity';
 
 @Table({
   tableName: 'producto',
@@ -41,9 +44,13 @@ export class Producto extends Model {
   @Column({ field: 'marca', type: DataType.STRING(100) })
   declare marca: string | null;
 
+  @ForeignKey(() => Categoria)
   @AllowNull(true)
   @Column({ field: 'idCategoria', type: DataType.INTEGER })
   declare idCategoria: number | null;
+
+  @BelongsTo(() => Categoria, 'idCategoria')
+  declare categoria?: Categoria;
 
   @AllowNull(false)
   @Default(true)

@@ -290,7 +290,7 @@ Incluye:
 | GET | `/api/productos` | Listar productos activos |
 | GET | `/api/productos/:id` | Obtener producto por ID |
 
-### Respuesta Producto (Campos públicos)
+### Respuesta Catálogo (Campos públicos)
 
 ```json
 {
@@ -308,6 +308,32 @@ Incluye:
   "path": "/api/productos"
 }
 ```
+
+### Respuesta Detalle de Producto
+
+`GET /api/productos/:id` devuelve los campos del catálogo más `descripcion`, `idCategoria` y `categoria`:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "nombre": "Teclado Mecánico RGB",
+    "imagenUrl": "https://images.unsplash.com/photo-1587829741301-dc798b83add3",
+    "precio": 240000,
+    "disponible": true,
+    "descripcion": "Teclado switches red con iluminación RGB personalizable y cable extraíble",
+    "idCategoria": 1,
+    "categoria": "Tecnología"
+  },
+  "timestamp": "2026-11-24T03:35:27.335Z",
+  "path": "/api/productos/1"
+}
+```
+
+- Un producto activo agotado responde `200` con `disponible: false`.
+- Un producto inactivo o inexistente responde `404`.
+- El endpoint no requiere autenticación.
 
 ### Módulos Pendientes 🚧
 
