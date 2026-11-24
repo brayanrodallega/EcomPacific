@@ -2,6 +2,7 @@ import { Controller, Get, Param, ParseIntPipe } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ProductosService } from '../services/productos.service';
 import { ProductoRespuestaDto } from '../dto/producto-respuesta.dto';
+import { ProductoDetalleRespuestaDto } from '../dto/producto-detalle-respuesta.dto';
 
 @ApiTags('Productos')
 @Controller('productos')
@@ -21,9 +22,15 @@ export class ProductosController {
 
   @Get(':id')
   @ApiOperation({ summary: 'Obtener producto por ID' })
-  @ApiResponse({ status: 200, description: 'Producto encontrado', type: ProductoRespuestaDto })
-  @ApiResponse({ status: 404, description: 'Producto no encontrado' })
-  async buscarPorId(@Param('id', ParseIntPipe) id: number): Promise<ProductoRespuestaDto> {
+  @ApiResponse({
+    status: 200,
+    description: 'Producto encontrado',
+    type: ProductoDetalleRespuestaDto,
+  })
+  @ApiResponse({ status: 404, description: 'Producto no encontrado o inactivo' })
+  async buscarPorId(
+    @Param('id', ParseIntPipe) id: number,
+  ): Promise<ProductoDetalleRespuestaDto> {
     return this.servicioProductos.buscarPorId(id);
   }
 }

@@ -2,6 +2,7 @@ import { Injectable, Inject } from '@nestjs/common';
 import { getModelToken } from '@nestjs/sequelize';
 import { Producto } from '../entities/producto.entity';
 import { Inventario } from '@modules/inventario/entities/inventario.entity';
+import { Categoria } from '@modules/categorias/entities/categoria.entity';
 
 @Injectable()
 export class ProductoRepository {
@@ -29,6 +30,9 @@ export class ProductoRepository {
       include: [
         {
           model: Inventario,
+        },
+        {
+          model: Categoria,
         },
       ],
     });
