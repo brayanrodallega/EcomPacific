@@ -2,10 +2,11 @@ import { useState } from 'react'
 import { Link, NavLink } from 'react-router-dom'
 import { ArrowUpRight, Menu, Search, ShoppingBag, X } from 'lucide-react'
 
-interface HeaderProps { search: string; onSearch: (value: string) => void }
+interface HeaderProps { search: string; onSearch: (value: string) => void; variant?: 'store' | 'dashboard' }
 
-export function Header({ search, onSearch }: HeaderProps) {
+export function Header({ search, onSearch, variant = 'store' }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false)
+  if (variant === 'dashboard') return <header className="dashboard-header"><div className="dashboard-header-inner wrap"><Link to="/" className="dashboard-brand">EcomPacific</Link><nav aria-label="Navegación principal"><NavLink to="/">Catálogo</NavLink><a href="#catalogo">Carrito</a><a href="#administracion">Administración</a></nav></div></header>
   return <header className="site-header">
     <div className="header-main wrap">
       <Link to="/" className="brand" aria-label="EcomPacific, inicio"><span className="brand-mark">e<span>.</span></span><span className="brand-name">ecompacific<small>HOGAR CON CALMA</small></span></Link>

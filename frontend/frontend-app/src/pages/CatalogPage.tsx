@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { ArrowDown, ArrowUp, ArrowUpRight, Check, ChevronDown, SlidersHorizontal } from 'lucide-react'
+﻿import { useEffect, useMemo, useState } from 'react'
+import { Check, ChevronDown, SlidersHorizontal } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Header } from '../components/Header'
 import { getProducts } from '../services/productService'
@@ -16,7 +16,12 @@ export function CatalogPage() {
   const [sort, setSort] = useState('featured')
   const [categoriesOpen, setCategoriesOpen] = useState(false)
 
-  useEffect(() => { getProducts().then(setProducts).catch(() => setError(true)).finally(() => setLoading(false)) }, [])
+  const loadProducts = () => {
+    setError(false)
+    setLoading(true)
+    getProducts().then(setProducts).catch(() => setError(true)).finally(() => setLoading(false))
+  }
+  useEffect(() => { loadProducts() }, [])
   const categories = useMemo(() => ['Todas', ...new Set(products.map(product => product.category))], [products])
   const visibleProducts = useMemo(() => {
     const result = products.filter(product => product.name.toLocaleLowerCase('es').includes(search.trim().toLocaleLowerCase('es')) && (category === 'Todas' || product.category === category))
@@ -25,17 +30,20 @@ export function CatalogPage() {
     return result
   }, [products, search, category, sort])
 
-  return <><Header search={search} onSearch={setSearch}/><main>
-    <section className="hero wrap" id="colecciones"><div className="hero-copy"><div className="eyebrow"><span className="eyebrow-dot"/>ESPACIOS PARA VIVIRLOS</div><h1>Tu casa, a tu<br/><em>manera.</em></h1><p>Piezas que hacen de cada rincón un lugar para quedarse un rato más.</p><a className="text-link" href="#catalogo">Explorar colección <ArrowDown size={16}/></a></div><div className="hero-image"><img src="https://images.unsplash.com/photo-1600210492486-724fe5c67fb0?auto=format&fit=crop&w=1600&q=90" alt="Sala cálida y luminosa con mobiliario de diseño"/><div className="image-caption"><span>01 / ESPACIOS CON INTENCIÓN</span><span>Detalles que hacen hogar</span></div></div><span className="hero-index">E / 01</span></section>
-    <section className="catalog-section wrap" id="catalogo"><div className="section-heading"><div><div className="eyebrow">HECHO PARA TU DÍA A DÍA</div><h2>Encuentra tu espacio</h2></div><p>Diseño funcional, materiales nobles<br/>y tiempo para disfrutarlo.</p></div>
-      <div className="demo-note"><span className="demo-dot"/><span><strong>Vista de demostración</strong> · Productos e imágenes ilustrativos; el catálogo real aún no está conectado.</span></div>
-      <div className="catalog-toolbar"><button className="filter-toggle" onClick={() => setCategoriesOpen(!categoriesOpen)}><SlidersHorizontal size={16}/> Categoría <ChevronDown size={15}/></button><span className="result-count">{loading ? 'Cargando…' : `${visibleProducts.length} piezas`}</span><label className="sort-select"><span>Ordenar por</span><select value={sort} onChange={e => setSort(e.target.value)} aria-label="Ordenar por precio"><option value="featured">Destacados</option><option value="low">Precio: menor a mayor</option><option value="high">Precio: mayor a menor</option></select><ChevronDown size={15}/></label></div>
-      <div className={`category-list ${categoriesOpen ? 'is-open' : ''}`} aria-label="Filtrar por categoría">{categories.map(item => <button key={item} className={category === item ? 'category-chip active' : 'category-chip'} onClick={() => { setCategory(item); setCategoriesOpen(false) }}>{item}{category === item && <Check size={13}/>}</button>)}</div>
-      {loading && <div className="product-grid" aria-label="Cargando productos">{[1,2,3,4].map(item => <div className="skeleton-card" key={item}><div className="skeleton-image"/><div className="skeleton-line"/><div className="skeleton-line short"/></div>)}</div>}
-      {error && <div className="empty-state"><h3>No pudimos cargar el catálogo</h3><p>Intenta de nuevo en unos momentos.</p><button className="primary-button" onClick={() => { setError(false); setLoading(true); getProducts().then(setProducts).catch(() => setError(true)).finally(() => setLoading(false)) }}>Volver a intentar</button></div>}
-      {!loading && !error && visibleProducts.length === 0 && <div className="empty-state"><h3>No encontramos piezas</h3><p>Prueba con otro nombre o categoría.</p><button className="text-link" onClick={() => { setSearch(''); setCategory('Todas') }}>Limpiar filtros <ArrowUp size={15}/></button></div>}
-      {!loading && !error && visibleProducts.length > 0 && <div className="product-grid">{visibleProducts.map((product, index) => <article className="product-card" key={product.id}><Link className="product-image" to={`/productos/${product.id}`} aria-label={`Ver ${product.name}`}><img src={product.image} alt={product.imageAlt} loading="lazy"/><span className={`availability ${product.available ? 'available' : 'unavailable'}`}><span/>{product.available ? 'Disponible' : 'Agotado'}</span>{product.tag && <span className="product-tag">{product.tag}</span>}<span className="image-arrow"><ArrowUpRight size={19}/></span></Link><div className="product-info"><div className="product-meta"><span>{product.category}</span><span>0{index + 1}</span></div><div className="product-title-row"><h3>{product.name}</h3><span className="product-price">{money.format(product.price)}</span></div><Link className="detail-link" to={`/productos/${product.id}`}>Ver detalle <ArrowUpRight size={14}/></Link></div></article>)}</div>}
-    </section>
-    <section className="closing-banner wrap" id="nosotros"><div className="closing-mark">e.</div><div><div className="eyebrow">MENOS PRISA, MÁS HOGAR</div><h2>El espacio también<br/>cuenta tu historia.</h2></div><a className="text-link" href="#catalogo">Descubre la colección <ArrowUpRight size={16}/></a></section>
-  </main><footer className="site-footer wrap"><span>ecompacific <span className="footer-dot">.</span></span><span>Un lugar para sentirte en casa.</span><span>© 2025 EcomPacific</span></footer></>
+  return <div className="dashboard-page">
+    <Header search={search} onSearch={setSearch} variant="dashboard"/>
+    <main className="dashboard-main wrap">
+      <section className="dashboard-hero"><div className="dashboard-kicker">TIENDA LOCAL&nbsp; / &nbsp;RECOGIDA EN TIENDA</div><h1>Productos del Pacífico</h1><p>Consulta precios y disponibilidad antes de hacer tu pedido.</p><span>Pago al recoger</span></section>
+      <section className="dashboard-catalog" id="catalogo">
+        <div className="dashboard-title"><h2>Catálogo de productos</h2>{!loading && !error && <p>{visibleProducts.length} productos · Precios en pesos colombianos</p>}</div>
+        <div className="catalog-toolbar dashboard-toolbar"><button className="filter-toggle" onClick={() => setCategoriesOpen(!categoriesOpen)}><SlidersHorizontal size={16}/> Categoría <ChevronDown size={15}/></button><span className="result-count">{loading ? 'Cargando…' : `${visibleProducts.length} productos`}</span><label className="sort-select"><span>Ordenar por</span><select value={sort} onChange={e => setSort(e.target.value)} aria-label="Ordenar por precio"><option value="featured">Destacados</option><option value="low">Precio: menor a mayor</option><option value="high">Precio: mayor a menor</option></select><ChevronDown size={15}/></label></div>
+        <div className={`category-list ${categoriesOpen ? 'is-open' : ''}`} aria-label="Filtrar por categoría">{categories.map(item => <button key={item} className={category === item ? 'category-chip active' : 'category-chip'} onClick={() => { setCategory(item); setCategoriesOpen(false) }}>{item}{category === item && <Check size={13}/>}</button>)}</div>
+        {loading && <div className="dashboard-grid">{[1, 2, 3].map(item => <div className="dashboard-state" key={item}>Cargando productos…</div>)}</div>}
+        {error && <div className="dashboard-state"><span>NO DISPONIBLE TEMPORALMENTE</span><h3>No pudimos cargar el catálogo</h3><p>Comprueba tu conexión e intenta nuevamente.</p><button className="dashboard-button" onClick={loadProducts}>Reintentar</button></div>}
+        {!loading && !error && visibleProducts.length === 0 && <div className="dashboard-state"><span>0 PRODUCTOS</span><h3>Aún no hay productos publicados</h3><p>Vuelve más tarde para consultar el catálogo.</p></div>}
+        {!loading && !error && visibleProducts.length > 0 && <div className="product-grid dashboard-grid">{visibleProducts.map(product => <article className="product-card dashboard-card" key={product.id}><Link className="product-image" to={`/productos/${product.id}`} aria-label={`Ver ${product.name}`}><img src={product.image} alt={product.imageAlt} loading="lazy"/></Link><div className="product-info"><div className="product-meta"><span>{product.category}</span></div><div className="product-title-row"><h3>{product.name}</h3></div><div className="product-price">{money.format(product.price)}</div><span className={`dashboard-availability ${product.available ? '' : 'unavailable'}`}>{product.available ? 'Disponible' : 'Agotado'}</span></div></article>)}</div>}
+      </section>
+    </main>
+    <footer className="dashboard-footer wrap"><span>EcomPacific&nbsp; / &nbsp;Catálogo público</span><a href="#catalogo">Índice del prototipo</a></footer>
+  </div>
 }
